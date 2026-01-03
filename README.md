@@ -3,59 +3,74 @@
 transformer-mt/
 │
 ├── config/
-│   ├── train_config.yaml         # hyperparams, optimizer, scheduler 
-│   ├── model_config.yaml         # num_layers, d_model, n_heads,...
+│   ├── train.yaml           # hyperparameters: batch_size, lr, warmup_steps, optimizer...
+│   ├── model.yaml           # Transformer config: num_layers, d_model, n_heads, d_ff...
 │
 ├── data/
-│   ├── raw/                      # dataset gốc
-│   ├── processed/                # sau preprocess/tokenize
-│   ├── prepare_data.py           # download + preprocess + build vocab
+│   ├── raw/                 # dataset gốc (downloaded)
+│   │   ├── train.en
+│   │   ├── train.vi
+│   │   ├── valid.en
+│   │   ├── valid.vi
+│   │   └── test.en / test.vi
+│   │
+│   ├── processed/           # tokenized / preprocessed files
+│   │   ├── train.pt
+│   │   ├── valid.pt
+│   │   └── test.pt
+│   │
+│   └── prepare_data.py      # download + preprocess + tokenize + save processed
 │
 ├── tokenizer/
-│   ├── vocab_builder.py          # BPE/WordPiece/Sentencepiece training
-│   ├── tokenizer.py              # encode/decode, add special tokens
+│   ├── vocab_builder.py     # BPE / SentencePiece / WordPiece training
+│   └── tokenizer.py         # encode / decode + add special tokens
 │
 ├── model/
-│   ├── layers.py                 # MultiHead Attention, FFN, Positional Encoding
-│   ├── encoder.py                # Transformer Encoder
-│   ├── decoder.py                # Transformer Decoder
-│   ├── transformer.py            # Full seq2seq Transformer
+│   ├── __init__.py
+│   ├── layers.py            # MultiHeadAttention, FFN, PositionalEncoding
+│   ├── encoder.py           # Transformer Encoder
+│   ├── decoder.py           # Transformer Decoder
+│   └── transformer.py       # Full Seq2Seq Transformer
 │
 ├── loss/
-│   ├── label_smoothing.py
-│   ├── masked_loss.py            # cross entropy mask padding
+│   ├── __init__.py
+│   ├── label_smoothing.py   # label smoothing loss
+│   └── masked_ce.py         # CrossEntropy with padding mask
+│
+├── engine/
+│   ├── dataset.py           # PyTorch Dataset + collate_fn
+│   ├── trainer.py           # Training loop: epochs, gradient clipping, logging
+│   ├── train_step.py        # 1 forward-backward-update + optimizer step + scheduler step
+│   └── evaluator.py         # validation / BLEU / perplexity
 │
 ├── utils/
-│   ├── masks.py                  # padding mask, lookahead mask
-│   ├── metrics.py                # BLEU, SacreBLEU
-│   ├── beam_search.py
-│   ├── logging.py
-│   ├── checkpoint.py
-│
-├── training/
-│   ├── dataset.py                # PyTorch dataset + collate_fn
-│   ├── dataloader.py
-│   ├── train_step.py             # 1 forward-backward-update
-│   ├── trainer.py                # training loop full
+│   ├── masks.py             # create src_mask, tgt_mask, lookahead mask
+│   ├── metrics.py           # BLEU, SacreBLEU, accuracy
+│   ├── beam_search.py       # beam search decoding
+│   ├── checkpoint.py        # save / load model + optimizer + scheduler
+│   └── logging.py           # logger setup, experiment logging
 │
 ├── inference/
-│   ├── translate.py              # greedy / beam search decoding
-│   ├── cli.py                    # command-line translate interface
+│   ├── translate.py         # greedy / beam search translation
+│   └── cli.py               # command-line interface for translation
 │
-├── notebooks/
-│   ├── model_sanity_check.ipynb
-│   ├── inference_demo.ipynb
+├── experiments/             # lưu checkpoint, logs, BLEU outputs
+│   ├── iwslt_en_vi/
+│   │   ├── checkpoints/
+│   │   ├── logs/
+│   │   └── translations/
 │
 ├── tests/
 │   ├── test_attention.py
 │   ├── test_tokenizer.py
-│   ├── test_translation.py
+│   └── test_translation.py
 │
-├── train.py                      # main training entrypoint
-├── evaluate.py                   # compute BLEU, generate outputs
-├── inference.py                  # quick inference script
+├── train.py                 # main entrypoint: load config, dataloader, trainer, start training
+├── evaluate.py              # run evaluation on test/valid, compute BLEU
+├── inference.py             # quick inference script
 ├── requirements.txt
 └── README.md
+
 ```
 
 | Tham số          | Ý nghĩa                               | Gợi ý ban đầu                      |
