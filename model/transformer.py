@@ -4,7 +4,7 @@ import torch.nn as nn
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.layers import EmbeddingLayer
-from model.utils import make_pad_mask, make_causal_mask
+from utils.masks import make_pad_mask, make_causal_mask
 
 
 class Transformer(nn.Module):
