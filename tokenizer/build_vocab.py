@@ -1,4 +1,4 @@
-from training.tokenizer import build_bpe_tokenizer, build_wordlevel_tokenizer
+from tokenizer.tokenizer import build_bpe_tokenizer, build_wordlevel_tokenizer
 from training.dataset import load_mt_eng_vietnamese_dataset
 
 
@@ -16,7 +16,6 @@ if __name__ == "__main__":
         dataset=dataset,
         vocab_size=12000
     )
-
 
     src_tokenizer.save("pretrained/src_tokenizer.json")
     tgt_tokenizer.save("pretrained/tgt_tokenizer.json")
