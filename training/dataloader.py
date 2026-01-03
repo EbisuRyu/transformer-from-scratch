@@ -7,8 +7,11 @@ from datasets import load_dataset
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader, Sampler
 
+from utils.dataset import load_iwslt2015_en_vi
+
 
 class TranslationDataset(Dataset):
+    
     def __init__(self, src_texts: List[str], tgt_texts: List[str], src_tokenizer: Tokenizer, tgt_tokenizer: Tokenizer):
         assert len(src_texts) == len(tgt_texts)
         self.src_texts = src_texts
@@ -29,6 +32,7 @@ class TranslationDataset(Dataset):
 
 
 class ShuffledBatchSampler(Sampler):
+    
     def __init__(self, dataset: Dataset, batch_size: int):
         self.dataset_len = len(dataset)
         self.batch_size = batch_size
@@ -51,12 +55,19 @@ def prepare_dataloader(
     max_seq_len: int,
     seed: int = 24
 ) -> DataLoader:
-    dataset = load_dataset(
-        "mt_eng_vietnamese",
-        "iwslt2015-en-vi",
+    
+    # dataset = load_dataset(
+    #     "mt_eng_vietnamese",
+    #     "iwslt2015-en-vi",
+    #     split=split,
+    #     trust_remote_code=True
+    # )
+    
+    dataset = load_iwslt2015_en_vi(
         split=split,
-        trust_remote_code=True
+        local_dir="./data/iwslt2015_en_vi"
     )
+    
     if split == "train":
         dataset = dataset.shuffle(seed=seed)
 
@@ -93,6 +104,7 @@ def get_mt_eng_vietnamese_dataloaders(
     max_seq_len: int,
     splits: List[str] = ["train", "validation", "test"]
 ) -> Dict[str, DataLoader]:
+    
     return {
         split: prepare_dataloader(split, src_tokenizer, tgt_tokenizer, batch_size, max_seq_len) 
         for split in splits
