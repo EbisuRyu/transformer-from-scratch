@@ -1,0 +1,96 @@
+from typing import Optional
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from tokenizers import Tokenizer
+
+from config.config import TrainConfig
+from model.transformer import Transformer
+
+
+class Trainer:
+    def __init__(
+        self,
+        config: TrainConfig,
+        model: Transformer,
+        src_tokenizer: Tokenizer,
+        tgt_tokenizer: Tokenizer,
+        criterion: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    ):
+        self.config = config
+        self.model = model.to(config.device)
+        self.src_tokenizer = src_tokenizer
+        self.tgt_tokenizer = tgt_tokenizer
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+        self.device = config.device
+
+    def train_epoch(self, train_loader: DataLoader, epoch: int) -> float:
+        self.model.train()
+        total_loss = 0.0
+        batch_iterator = tqdm(train_loader, desc=f"Training Epoch {epoch:02d}", total=len(train_loader))
+
+        for step_idx, batch in enumerate(batch_iterator, start=1):
+            src_batch = batch[0].to(self.device)
+            tgt_batch = batch[1].to(self.device)
+
+            decoder_input = tgt_batch[:, :-1]
+            decoder_target = tgt_batch[:, 1:]
+
+            outputs = self.model(src_batch, decoder_input)
+            logits = outputs["logits"]
+            loss = self.criterion(
+                logits.reshape(-1, logits.size(-1)),
+                decoder_target.reshape(-1)
+            )
+            loss.backward()
+            total_loss += loss.item()
+
+            if step_idx % self.config.grad_accumulation_steps == 0:
+                if self.config.gradient_clip_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.gradient_clip_norm)
+                self.optimizer.step()
+                if self.scheduler:
+                    self.scheduler.step()
+                self.optimizer.zero_grad()
+
+            batch_iterator.set_postfix({"loss": f"{loss.item():.4f}"})
+
+        avg_loss = total_loss / len(train_loader)
+        print(f"Epoch {epoch}: Training loss = {avg_loss:.4f}")
+        return avg_loss
+
+    @torch.no_grad()
+    def eval_epoch(self, val_loader: DataLoader, epoch: int) -> float:
+        self.model.eval()
+        total_loss = 0.0
+
+        batch_iterator = tqdm(val_loader, desc=f"Validation Epoch {epoch:02d}", total=len(val_loader))
+        for batch in batch_iterator:
+            src_batch = batch[0].to(self.device)
+            tgt_batch = batch[1].to(self.device)
+
+            decoder_input = tgt_batch[:, :-1]
+            decoder_target = tgt_batch[:, 1:]
+            
+            outputs = self.model(src_batch, decoder_input)
+            logits = outputs["logits"]
+            loss = self.criterion(
+                logits.reshape(-1, logits.size(-1)),
+                decoder_target.reshape(-1)
+            )
+            total_loss += loss.item()
+
+        avg_loss = total_loss / len(val_loader)
+        print(f"Epoch {epoch}: Validation loss = {avg_loss:.4f}")
+        return avg_loss
+
+    def fit(self, train_loader: DataLoader, val_loader: DataLoader, start_epoch: int = 0):
+        for epoch in range(start_epoch, start_epoch + self.config.epochs):
+            print(f"\n--- Epoch {epoch} ---")
+            self.train_epoch(train_loader, epoch)
+            self.eval_epoch(val_loader, epoch)
