@@ -21,13 +21,15 @@ class PositionalEncoding(nn.Module):
     
     def _generate_positional_encoding(self) -> None:
         if self.mode == "sinusoidal":
-            position = torch.arange(0, self.max_seq_len, dtype=torch.float32).unsqueeze(1)
-            _2i = torch.arange(0, self.d_model, step=2, dtype=torch.float32)
-            self.positional_encoding = torch.zeros(self.max_seq_len, self.d_model, requires_grad=False)
-            self.positional_encoding[:, 0::2] = torch.sin(position / torch.pow(10000, _2i / self.d_model))
-            self.positional_encoding[:, 1::2] = torch.sin(position / torch.pow(10000, _2i / self.d_model))
-            self.positional_encoding = self.positional_encoding
-        
+            position  = torch.arange(self.max_seq_len, dtype=torch.float32).unsqueeze(1)
+            div_term  = torch.pow(10000.0, torch.arange(0, self.d_model, 2) / self.d_model)
+
+            positional_encoding = torch.zeros(self.max_seq_len, self.d_model)
+            positional_encoding[:, 0::2] = torch.sin(position / div_term)
+            positional_encoding[:, 1::2] = torch.cos(position / div_term)
+
+            self.register_buffer("positional_encoding", positional_encoding)
+
         elif self.mode == "learnable":
             self.positional_encoding = nn.Embedding(
                 num_embeddings=self.max_seq_len,
