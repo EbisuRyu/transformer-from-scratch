@@ -1,15 +1,22 @@
 from typing import Optional
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
+from IPython.display import display, clear_output
+
+import pandas as pd
 from tqdm import tqdm
 from tokenizers import Tokenizer
 
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
+
 from config.config import TrainConfig
 from model.transformer import Transformer
+from training.checkpointer import Checkpointer
 
 
 class Trainer:
+    
     def __init__(
         self,
         config: TrainConfig,
@@ -28,6 +35,14 @@ class Trainer:
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.device = config.device
+        
+        self.history = []
+        self.checkpointer = Checkpointer(
+            checkpoint_dir=config.checkpoint_dir,
+            monitor=config.monitor_metric,
+            mode=config.monitor_mode,
+            save_best_only=config.save_best_only
+        )
 
     def train_epoch(self, train_loader: DataLoader, epoch: int) -> float:
         self.model.train()
@@ -61,7 +76,6 @@ class Trainer:
             batch_iterator.set_postfix({"loss": f"{loss.item():.4f}"})
 
         avg_loss = total_loss / len(train_loader)
-        print(f"Epoch {epoch}: Training loss = {avg_loss:.4f}")
         return avg_loss
 
     @torch.no_grad()
@@ -86,11 +100,46 @@ class Trainer:
             total_loss += loss.item()
 
         avg_loss = total_loss / len(val_loader)
-        print(f"Epoch {epoch}: Validation loss = {avg_loss:.4f}")
         return avg_loss
 
-    def fit(self, train_loader: DataLoader, val_loader: DataLoader, start_epoch: int = 0):
-        for epoch in range(start_epoch, start_epoch + self.config.epochs):
-            print(f"\n--- Epoch {epoch} ---")
-            self.train_epoch(train_loader, epoch)
-            self.eval_epoch(val_loader, epoch)
+    def fit(
+        self,
+        train_loader: DataLoader,
+        val_loader: DataLoader,
+        start_epoch: int = 0
+    ):
+        for epoch in range(start_epoch + 1, self.config.epochs + 1):
+            train_loss = self.train_epoch(train_loader, epoch)
+            val_loss = self.eval_epoch(val_loader, epoch)
+
+            metrics = {
+                "train_loss": train_loss,
+                "val_loss": val_loss
+            }
+
+            self.checkpointer.save(
+                epoch=epoch,
+                metrics=metrics,
+                model=self.model,
+                optimizer=self.optimizer,
+                scheduler=self.scheduler
+            )
+
+            row = {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "val_loss": val_loss
+            }
+            self.history.append(row)
+
+            df = pd.DataFrame(self.history)
+
+            clear_output(wait=True)
+            display(
+                df.style.format({
+                    "train_loss": "{:.4f}",
+                    "val_loss": "{:.4f}"
+                })
+            )
+
+        return df
