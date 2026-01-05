@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from config.config import ModelConfig
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.layers import EmbeddingLayer
@@ -9,63 +10,43 @@ from utils.masks import make_pad_mask, make_causal_mask
 
 class Transformer(nn.Module):
     
-    def __init__(
-        self,
-        src_vocab_size: int,
-        tgt_vocab_size: int,
-        d_model: int,
-        num_layers: int,
-        num_heads: int,
-        d_ff: int,
-        max_seq_len: int,
-        dropout: float = 0.1,
-        activation: str = "relu",
-        pad_id: int = 0
-    ) -> None:
+    def __init__(self, config: ModelConfig) -> None:
         super(Transformer, self).__init__()
-        self.src_vocab_size = src_vocab_size
-        self.tgt_vocab_size = tgt_vocab_size
-        self.d_model = d_model
-        self.num_layers = num_layers
-        self.num_heads = num_heads
-        self.d_ff = d_ff
-        self.max_seq_len = max_seq_len
-        self.activation = activation
-        self.pad_id = pad_id
+        self.config = config
         
         self.src_embedding = EmbeddingLayer(
-            d_model=d_model,
-            vocab_size=src_vocab_size,
-            max_seq_len=max_seq_len,
-            dropout=dropout,
+            d_model=config.d_model,
+            vocab_size=config.src_vocab_size,
+            max_seq_len=config.max_seq_len,
+            dropout=config.dropout,
             positional_encoding_mode="sinusoidal"
         )
         self.tgt_embedding = EmbeddingLayer(
-            d_model=d_model,
-            vocab_size=tgt_vocab_size,
-            max_seq_len=max_seq_len,
-            dropout=dropout,
+            d_model=config.d_model,
+            vocab_size=config.tgt_vocab_size,
+            max_seq_len=config.max_seq_len,
+            dropout=config.dropout,
             positional_encoding_mode="sinusoidal"
         )
         
         self.encoder = Encoder(
-            num_layers=num_layers,
-            num_heads=num_heads,
-            d_model=d_model,
-            d_ff=d_ff,
-            dropout=dropout,
-            activation=activation
+            num_layers=config.num_layers,
+            num_heads=config.num_heads,
+            d_model=config.d_model,
+            d_ff=config.d_ff,
+            dropout=config.dropout,
+            activation=config.activation
         )
         self.decoder = Decoder(
-            num_layers=num_layers,
-            num_heads=num_heads,
-            d_model=d_model,
-            d_ff=d_ff,
-            dropout=dropout,
-            activation=activation
+            num_layers=config.num_layers,
+            num_heads=config.num_heads,
+            d_model=config.d_model,
+            d_ff=config.d_ff,
+            dropout=config.dropout,
+            activation=config.activation
         )
         
-        self.lm_head = nn.Linear(d_model, tgt_vocab_size)
+        self.lm_head = nn.Linear(config.d_model, config.tgt_vocab_size)
     
     def forward(
         self,
@@ -75,8 +56,8 @@ class Transformer(nn.Module):
         device = src.device
         batch_size, tgt_len = tgt.size()
         
-        src_mask = make_pad_mask(src, pad_id=self.pad_id)  # (B, 1, 1, S)
-        tgt_pad_mask = make_pad_mask(tgt, pad_id=self.pad_id)  # (B, 1, 1, T)
+        src_mask = make_pad_mask(src, pad_id=self.config.pad_id)  # (B, 1, 1, S)
+        tgt_pad_mask = make_pad_mask(tgt, pad_id=self.config.pad_id)  # (B, 1, 1, T)
         causal_mask = make_causal_mask(tgt_len, device)  # (1, 1, T, T)
         tgt_mask = tgt_pad_mask & causal_mask  # (B, 1, T, T)
         
