@@ -106,9 +106,9 @@ class Trainer:
         self,
         train_loader: DataLoader,
         val_loader: DataLoader,
-        start_epoch: int = 0
+        start_epoch: int = 1
     ):
-        for epoch in range(start_epoch + 1, self.config.epochs + 1):
+        for epoch in range(start_epoch, self.config.epochs + 1):
             train_loss = self.train_epoch(train_loader, epoch)
             val_loss = self.eval_epoch(val_loader, epoch)
 
