@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from pathlib import Path
 
 import torch
@@ -52,9 +52,10 @@ class Checkpointer:
 
         state = {
             "epoch": epoch,
-            "model": model.state_dict(),
-            "optimizer": optimizer.state_dict() if optimizer else None,
-            "scheduler": scheduler.state_dict() if scheduler else None,
+            "model_state": model.state_dict(),
+            "model_config": getattr(model, "config", None),
+            "optimizer_state": optimizer.state_dict() if optimizer else None,
+            "scheduler_state": scheduler.state_dict() if scheduler else None,
             "metrics": metrics,
             "best_score": self.best_score,
         }
@@ -65,3 +66,56 @@ class Checkpointer:
         if is_best:
             best_path = self.checkpoint_dir / "best.pt"
             torch.save(state, best_path)
+
+    def load(
+        self,
+        name: str = "best",  # "best" or "last"
+        model: Optional[Transformer] = None,
+        optimizer: Optional[torch.optim.Optimizer] = None,
+        scheduler: Optional[Any] = None,
+        device: torch.device = torch.device("cpu"),
+        strict: bool = True,
+    ) -> Tuple[Optional[Transformer], int, Dict[str, float]]:
+
+        checkpoint_path = self.checkpoint_dir / f"{name}.pt"
+        assert checkpoint_path.exists(), f"Checkpoint not found: {checkpoint_path}"
+
+        checkpoint = torch.load(
+            checkpoint_path,
+            map_location=device,
+        )
+
+        self.best_score = checkpoint.get("best_score", self.best_score)
+
+        if model is None:
+            model_config = checkpoint.get("model_config")
+            assert model_config is not None, "model_config not found in checkpoint"
+            model = Transformer(**model_config)
+
+        model.load_state_dict(
+            checkpoint["model_state"],
+            strict=strict,
+        )
+        model.to(device)
+
+        if optimizer and checkpoint["optimizer_state"] is not None:
+            optimizer.load_state_dict(checkpoint["optimizer_state"])
+            self._move_optimizer_to_device(optimizer, device)
+
+        if scheduler and checkpoint["scheduler_state"] is not None:
+            scheduler.load_state_dict(checkpoint["scheduler_state"])
+
+        epoch = checkpoint["epoch"]
+        metrics = checkpoint["metrics"]
+
+        return model, epoch, metrics
+
+    @staticmethod
+    def _move_optimizer_to_device(
+        optimizer: torch.optim.Optimizer,
+        device: torch.device,
+    ):
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(device)
