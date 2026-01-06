@@ -34,16 +34,16 @@ def parse_args():
 
 def main():
     args = parse_args()
-    device = torch.device(args.device)
 
     logger = get_logger(name="train")
-    logger.info(f"Using device: {device}")
+    logger.info(f"Using device: {args.device}")
 
     logger.info("Loading tokenizers...")
     src_tokenizer = Tokenizer.from_file("./tokenizer/src_tokenizer.json")
     tgt_tokenizer = Tokenizer.from_file("./tokenizer/tgt_tokenizer.json")
 
     train_config, model_config = load_config()
+    train_config.device = args.device
     logger.info("Loaded training & model config")
 
     logger.info("Building dataloaders...")
@@ -55,7 +55,7 @@ def main():
     )
 
     logger.info("Building Transformer model...")
-    model = Transformer(config=model_config).to(device)
+    model = Transformer(config=model_config).to(args.device)
 
     criterion = nn.CrossEntropyLoss(
         ignore_index=src_tokenizer.token_to_id("[PAD]"),
@@ -94,7 +94,7 @@ def main():
             model=model,
             optimizer=optimizer,
             scheduler=scheduler,
-            device=device,
+            device=args.device,
         )
 
         start_epoch = last_epoch + 1
