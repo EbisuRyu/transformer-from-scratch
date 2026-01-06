@@ -14,5 +14,5 @@ monitor_mode: min
 checkpoint_dir: weights
 save_best_only: true
 
-device: cpu
+device: cuda
 seed: 42
