@@ -9,8 +9,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-
-from config.config import TrainConfig
+from config import TrainConfig
 from model.transformer import Transformer
 from training.checkpointer import Checkpointer
 
@@ -25,6 +24,7 @@ class Trainer:
         tgt_tokenizer: Tokenizer,
         criterion: nn.Module,
         optimizer: torch.optim.Optimizer,
+        checkpointer: Checkpointer,
         scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
     ):
         self.config = config
@@ -34,15 +34,10 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.checkpointer = checkpointer
         self.device = config.device
         
         self.history = []
-        self.checkpointer = Checkpointer(
-            checkpoint_dir=config.checkpoint_dir,
-            monitor=config.monitor_metric,
-            mode=config.monitor_mode,
-            save_best_only=config.save_best_only
-        )
 
     def train_epoch(self, train_loader: DataLoader, epoch: int) -> float:
         self.model.train()

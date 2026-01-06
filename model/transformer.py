@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from config.config import ModelConfig
+from config import ModelConfig
 from model.encoder import Encoder
 from model.decoder import Decoder
 from model.layers import EmbeddingLayer
