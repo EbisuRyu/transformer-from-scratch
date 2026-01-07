@@ -93,6 +93,8 @@ class Trainer:
                 decoder_target.reshape(-1)
             )
             total_loss += loss.item()
+        
+            batch_iterator.set_postfix({"loss": f"{loss.item():.4f}"})
 
         avg_loss = total_loss / len(val_loader)
         return avg_loss
