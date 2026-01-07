@@ -23,10 +23,26 @@ def parse_args():
         default=None,
         help="Path to checkpoint (last.pt or best.pt)",
     )
+
     parser.add_argument(
         "--device",
         type=str,
         default="cuda" if torch.cuda.is_available() else "cpu",
+        help="Training device",
+    )
+
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="Override batch size from training config",
+    )
+
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help="Override number of training epochs",
     )
 
     return parser.parse_args()
@@ -44,6 +60,15 @@ def main():
 
     train_config, model_config = load_config()
     train_config.device = args.device
+    
+    if args.batch_size is not None:
+        logger.info(f"Override batch size → {args.batch_size}")
+        train_config.batch_size = args.batch_size
+
+    if args.epochs is not None:
+        logger.info(f"Override epochs → {args.epochs}")
+        train_config.num_epochs = args.epochs
+        
     logger.info("Loaded training & model config")
 
     logger.info("Building dataloaders...")
