@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List
 from torch.utils.data import Dataset
 
 from tokenizers import Tokenizer, normalizers
@@ -10,8 +10,9 @@ from tokenizers.processors import TemplateProcessing
 
 
 def build_bpe_tokenizer(
-    dataset: Dataset, 
-    vocab_size: int
+    dataset: Dataset,
+    vocab_size: int,
+    fields: List[str] = ["en", "vi"], 
 ) -> Tokenizer:
     tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
 
@@ -30,7 +31,10 @@ def build_bpe_tokenizer(
 
     def batch_iterator(batch_size=10000):
         for i in range(0, len(dataset), batch_size):
-            yield dataset[i: i + batch_size]["src"]  # EN ONLY
+            batch = dataset["translation"][i: i + batch_size]
+            for example in batch:
+                for f in fields:
+                    yield example[f]
 
     tokenizer.train_from_iterator(batch_iterator(), trainer=trainer)
 
@@ -46,8 +50,9 @@ def build_bpe_tokenizer(
 
 
 def build_wordlevel_tokenizer(
-    dataset: Dataset, 
-    vocab_size: int
+    dataset: Dataset,
+    vocab_size: int,
+    fields: List[str] = ["en", "vi"],
 ) -> Tokenizer:
     tokenizer = Tokenizer(WordLevel(unk_token="[UNK]"))
 
@@ -66,7 +71,10 @@ def build_wordlevel_tokenizer(
 
     def batch_iterator(batch_size=10000):
         for i in range(0, len(dataset), batch_size):
-            yield dataset[i: i + batch_size]["tgt"] 
+            batch = dataset["translation"][i: i + batch_size]
+            for example in batch:
+                for f in fields:
+                    yield example[f]
 
     tokenizer.train_from_iterator(batch_iterator(), trainer=trainer)
 
