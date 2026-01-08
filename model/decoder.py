@@ -59,25 +59,17 @@ class DecoderLayer(nn.Module):
         tgt_mask: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         self_attention_output, self_attention_scores = self.self_attention(
-            q=self.norm_1(y),
-            k=self.norm_1(y),
-            v=self.norm_1(y),
-            mask=tgt_mask
+            q=y, k=y, v=y, mask=tgt_mask
         )
-        y = y + self.dropout_1(self_attention_output)
+        y = self.norm_1(y + self.dropout_1(self_attention_output))
         
         cross_attention_output, cross_attention_scores = self.cross_attention(
-            q=self.norm_2(y),
-            k=encoder_output,
-            v=encoder_output,
-            mask=src_mask
+            q=y, k=encoder_output, v=encoder_output, mask=src_mask
         )
-        y = y + self.dropout_2(cross_attention_output)
+        y = self.norm_2(y + self.dropout_2(cross_attention_output))
         
-        feed_forward_output = self.feed_forward(
-            x=self.norm_3(y)
-        )
-        y = y + self.dropout_3(feed_forward_output)
+        feed_forward_output = self.feed_forward(x=y)
+        y = self.norm_3(y + self.dropout_3(feed_forward_output))
         
         return y, self_attention_scores, cross_attention_scores
     
@@ -111,7 +103,6 @@ class Decoder(nn.Module):
             )
             for _ in range(num_layers)
         ])
-        self.norm = nn.LayerNorm(d_model)
         
     def forward(
         self,
@@ -132,7 +123,6 @@ class Decoder(nn.Module):
             )
             self_attention_maps.append(self_attention_scores)
             cross_attention_maps.append(cross_attention_scores)
-        y = self.norm(y)
         
         return (
             y, 

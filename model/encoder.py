@@ -20,6 +20,8 @@ class EncoderLayer(nn.Module):
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
+        self.dropout = dropout
+        self.activation = activation
         
         self.self_attention = MultiHeadAttention(
             d_model=d_model, 
@@ -45,17 +47,12 @@ class EncoderLayer(nn.Module):
         src_mask: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         self_attention_output, self_attention_scores = self.self_attention(
-            q=self.norm_1(x),
-            k=self.norm_1(x),
-            v=self.norm_1(x),
-            mask=src_mask
+            q=x, k=x, v=x, mask=src_mask
         )
-        x = x + self.dropout_1(self_attention_output)
+        x = self.norm_1(x + self.dropout_1(self_attention_output))
         
-        feed_forward_output = self.feed_forward(
-            x=self.norm_2(x)
-        )
-        x = x + self.dropout_2(feed_forward_output)
+        feed_forward_output = self.feed_forward(x=x)
+        x = self.norm_2(x + self.dropout_2(feed_forward_output))
         
         return x, self_attention_scores 
 
@@ -89,7 +86,6 @@ class Encoder(nn.Module):
             )
             for _ in range(num_layers)
         ])
-        self.norm = nn.LayerNorm(d_model)
     
     def forward(
         self, 
@@ -101,6 +97,5 @@ class Encoder(nn.Module):
         for layer in self.layers:
             x, self_attention_scores = layer(x, src_mask)
             self_attention_maps.append(self_attention_scores)
-        x = self.norm(x)
 
         return x, torch.stack(self_attention_maps, dim=0)
