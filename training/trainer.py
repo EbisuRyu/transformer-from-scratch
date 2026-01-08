@@ -37,14 +37,20 @@ class Trainer:
         self.checkpointer = checkpointer
         self.device = config.device
         
+        self.global_step = 0        
         self.history = []
 
     def train_epoch(self, train_loader: DataLoader, epoch: int) -> float:
         self.model.train()
         total_loss = 0.0
-        batch_iterator = tqdm(train_loader, desc=f"Training Epoch {epoch:02d}", total=len(train_loader))
 
-        for step_idx, batch in enumerate(batch_iterator, start=1):
+        batch_iterator = tqdm(
+            train_loader,
+            desc=f"Training Epoch {epoch:02d}",
+            total=len(train_loader)
+        )
+
+        for batch in batch_iterator:
             src_batch = batch[0].to(self.device)
             tgt_batch = batch[1].to(self.device)
 
@@ -53,25 +59,43 @@ class Trainer:
 
             outputs = self.model(src_batch, decoder_input)
             logits = outputs["logits"]
+
             loss = self.criterion(
                 logits.reshape(-1, logits.size(-1)),
                 decoder_target.reshape(-1)
             )
             loss.backward()
             total_loss += loss.item()
+            
+            self.global_step += 1
 
-            if step_idx % self.config.grad_accumulation_steps == 0:
+            if self.global_step % self.config.grad_accumulation_steps == 0:
                 if self.config.gradient_clip_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.gradient_clip_norm)
+                    torch.nn.utils.clip_grad_norm_(
+                        self.model.parameters(),
+                        self.config.gradient_clip_norm
+                    )
+
                 self.optimizer.step()
+
                 if self.scheduler:
                     self.scheduler.step()
+
                 self.optimizer.zero_grad()
 
-            batch_iterator.set_postfix({"loss": f"{loss.item():.4f}"})
+            if self.scheduler:
+                lr = self.scheduler.get_last_lr()[0]
+            else:
+                lr = self.optimizer.param_groups[0]["lr"]
+
+            batch_iterator.set_postfix({
+                "loss": f"{loss.item():.4f}",
+                "lr": f"{lr:.6e}"
+            })
 
         avg_loss = total_loss / len(train_loader)
         return avg_loss
+
 
     @torch.no_grad()
     def eval_epoch(self, val_loader: DataLoader, epoch: int) -> float:
@@ -88,6 +112,7 @@ class Trainer:
             
             outputs = self.model(src_batch, decoder_input)
             logits = outputs["logits"]
+            
             loss = self.criterion(
                 logits.reshape(-1, logits.size(-1)),
                 decoder_target.reshape(-1)
