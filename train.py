@@ -6,12 +6,15 @@ import torch.optim as optim
 from tokenizers import Tokenizer
 
 from model.transformer import Transformer
-from training.trainer import Trainer
-from training.dataloader import get_mt_eng_vietnamese_dataloaders
-from training.scheduler import WarmupScheduler
 from training.checkpointer import Checkpointer
+from training.trainer import Trainer
+from training.scheduler import WarmupScheduler
+from training.dataloader import get_mt_eng_vietnamese_dataloaders
 from utils.logging import get_logger
 from config import load_config
+
+
+logger = get_logger(name="train")
 
 
 def parse_args():
@@ -51,12 +54,11 @@ def parse_args():
 def main():
     args = parse_args()
 
-    logger = get_logger(name="train")
     logger.info(f"Using device: {args.device}")
 
     logger.info("Loading tokenizers...")
-    src_tokenizer = Tokenizer.from_file("./tokenizer/src_tokenizer.json")
-    tgt_tokenizer = Tokenizer.from_file("./tokenizer/tgt_tokenizer.json")
+    src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
+    tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
 
     train_config, model_config = load_config()
     train_config.device = args.device
@@ -77,6 +79,7 @@ def main():
         max_seq_len=model_config.max_seq_len,
         src_tokenizer=src_tokenizer,
         tgt_tokenizer=tgt_tokenizer,
+        num_workers=train_config.num_workers
     )
 
     logger.info("Building Transformer model...")
