@@ -22,4 +22,5 @@ class TrainConfig:
     save_best_only: bool = True
     
     device: str = "cuda"
+    num_workers: int = 0
     seed: int = 42

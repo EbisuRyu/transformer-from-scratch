@@ -15,4 +15,5 @@ checkpoint_dir: weights
 save_best_only: true
 
 device: cuda
+num_workers: 2
 seed: 42

@@ -6,7 +6,7 @@ num_layers: 6
 num_heads: 8
 d_ff: 2048
 
-max_seq_len: 256
+max_seq_len: 40
 dropout: 0.1
 activation: gelu
 
