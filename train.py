@@ -9,7 +9,7 @@ from model.transformer import Transformer
 from training.checkpointer import Checkpointer
 from training.trainer import Trainer
 from training.scheduler import WarmupScheduler
-from training.dataloader import get_mt_eng_vietnamese_dataloaders
+from training.dataloader import get_iwslt2015_en_vi_dataloaders
 from utils.logging import get_logger
 from config import load_config
 
@@ -74,7 +74,7 @@ def main():
     logger.info("Loaded training & model config")
 
     logger.info("Building dataloaders...")
-    dataloaders = get_mt_eng_vietnamese_dataloaders(
+    dataloaders = get_iwslt2015_en_vi_dataloaders(
         batch_size=train_config.batch_size,
         max_seq_len=model_config.max_seq_len,
         src_tokenizer=src_tokenizer,
