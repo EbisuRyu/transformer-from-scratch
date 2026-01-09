@@ -1,0 +1,13 @@
+src_vocab_size: 16000
+tgt_vocab_size: 12000
+
+d_model: 512
+num_layers: 6
+num_heads: 8
+d_ff: 2048
+
+max_seq_len: 40
+dropout: 0.1
+activation: gelu
+
+pad_id: 0

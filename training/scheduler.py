@@ -9,12 +9,17 @@ class WarmupScheduler(_LRScheduler):
         warmup_steps: int = 4000,
         last_epoch: int = -1,
     ):
+        self.num_steps = 0          
         self.d_model = d_model
         self.warmup_steps = warmup_steps
         super().__init__(optimizer, last_epoch)
 
+    def step(self):
+        self.num_steps += 1
+        return super().step()
+
     def get_lr(self):
-        step = max(self.last_epoch + 1, 1)
+        step = max(self.num_steps, 1)
 
         scale = (
             self.d_model ** -0.5

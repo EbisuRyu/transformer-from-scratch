@@ -53,7 +53,8 @@ def prepare_dataloader(
     tgt_tokenizer: Tokenizer,
     batch_size: int,
     max_seq_len: int,
-    seed: int = 24
+    seed: int = 24,
+    num_workers: int = 0
 ) -> DataLoader:
     
     # dataset = load_dataset(
@@ -93,7 +94,14 @@ def prepare_dataloader(
         return src_batch, tgt_batch
 
     batch_sampler = ShuffledBatchSampler(translation_dataset, batch_size=batch_size)
-    dataloader = DataLoader(translation_dataset, batch_sampler=batch_sampler, collate_fn=collate_fn, pin_memory=True)
+    dataloader = DataLoader(
+        translation_dataset, 
+        batch_sampler=batch_sampler, 
+        collate_fn=collate_fn, 
+        pin_memory=True,
+        num_workers=num_workers
+    )
+    
     return dataloader
 
 
@@ -102,10 +110,18 @@ def get_mt_eng_vietnamese_dataloaders(
     tgt_tokenizer: Tokenizer,
     batch_size: int,
     max_seq_len: int,
+    num_workers: int = 0,
     splits: List[str] = ["train", "validation", "test"]
 ) -> Dict[str, DataLoader]:
     
     return {
-        split: prepare_dataloader(split, src_tokenizer, tgt_tokenizer, batch_size, max_seq_len) 
+        split: prepare_dataloader(
+            split=split, 
+            src_tokenizer=src_tokenizer, 
+            tgt_tokenizer=tgt_tokenizer, 
+            batch_size=batch_size, 
+            max_seq_len=max_seq_len,
+            num_workers=num_workers
+        ) 
         for split in splits
     }

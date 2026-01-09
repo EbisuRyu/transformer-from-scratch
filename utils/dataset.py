@@ -1,9 +1,55 @@
-from datasets import load_dataset, Dataset
-from pathlib import Path
 from typing import Literal
+import re
+import unicodedata
+from pathlib import Path
+from datasets import load_dataset, Dataset
 
 
 Split = Literal["train", "validation", "test"]
+
+
+VIETNAMESE_CHARS = (
+    "aăâbcdđeêghiklmnoôơpqrstuưvxy"
+    "áàảãạắằẳẵặấầẩẫậéèẻẽẹếềểễệ"
+    "íìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữự"
+    "ýỳỷỹỵ"
+)
+VI_REGEX = re.compile(rf"[^{VIETNAMESE_CHARS}\s]")
+
+
+def normalize_vietnamese(text: str) -> str:
+    text = text.lower()
+    text = unicodedata.normalize("NFC", text)
+    text = VI_REGEX.sub(" ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def normalize_english(text: str) -> str:
+    text = text.lower()
+    text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[^a-z\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def process_dataset(dataset: Dataset) -> Dataset:
+
+    def _process(example):
+        en_raw = example["translation"]["en"]
+        vi_raw = example["translation"]["vi"]
+
+        en_norm = normalize_english(en_raw)
+        vi_norm = normalize_vietnamese(vi_raw)
+
+        return {
+            "translation": {
+                "en": en_norm,
+                "vi": vi_norm,
+            }
+        }
+
+    return dataset.map(_process)
 
 
 def load_iwslt2015_en_vi(
@@ -11,12 +57,14 @@ def load_iwslt2015_en_vi(
     local_dir: str | None = None,
 ):
     try:
-        return load_dataset(
+        dataset = load_dataset(
             "mt_eng_vietnamese",
             "iwslt2015-en-vi",
             split=split,
             trust_remote_code=True,
         )
+        dataset = process_dataset(dataset)
+        return dataset
 
     except Exception as e:
         if local_dir is None:
@@ -48,4 +96,6 @@ def load_iwslt2015_en_vi(
             if en.strip() and vi.strip()
         ]
 
-        return Dataset.from_list(data)
+        dataset = Dataset.from_list(data)
+        dataset = process_dataset(dataset)
+        return dataset

@@ -1,0 +1,19 @@
+batch_size: 32
+epochs: 30
+grad_accumulation_steps: 1
+gradient_clip_norm: 1.0
+label_smoothing: 0.1
+
+optimizer: adamw
+learning_rate: 1.0
+weight_decay: 0.0001
+warmup_steps: 4000
+
+monitor_metric: val_loss
+monitor_mode: min
+checkpoint_dir: weights
+save_best_only: true
+
+device: cuda
+num_workers: 2
+seed: 42
