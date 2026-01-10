@@ -105,7 +105,7 @@ def prepare_dataloader(
     return dataloader
 
 
-def get_mt_eng_vietnamese_dataloaders(
+def get_iwslt2015_en_vi_dataloaders(
     src_tokenizer: Tokenizer,
     tgt_tokenizer: Tokenizer,
     batch_size: int,

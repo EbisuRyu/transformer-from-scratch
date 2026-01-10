@@ -128,7 +128,8 @@ class Trainer:
         self,
         train_loader: DataLoader,
         val_loader: DataLoader,
-        start_epoch: int = 1
+        start_epoch: int = 1,
+        save_every: int = 3
     ):
         for epoch in range(start_epoch, self.config.epochs + 1):
             train_loss = self.train_epoch(train_loader, epoch)
@@ -138,14 +139,15 @@ class Trainer:
                 "train_loss": train_loss,
                 "val_loss": val_loss
             }
-
-            self.checkpointer.save(
-                epoch=epoch,
-                metrics=metrics,
-                model=self.model,
-                optimizer=self.optimizer,
-                scheduler=self.scheduler
-            )
+            
+            if epoch % save_every == 0:
+                self.checkpointer.save(
+                    epoch=epoch,
+                    metrics=metrics,
+                    model=self.model,
+                    optimizer=self.optimizer,
+                    scheduler=self.scheduler
+                )
 
             row = {
                 "epoch": epoch,
