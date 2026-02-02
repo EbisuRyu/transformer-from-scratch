@@ -8,7 +8,7 @@
 A PyTorch implementation of the Transformer architecture from the paper ["Attention Is All You Need"](https://arxiv.org/abs/1706.03762) for Neural Machine Translation (English → Vietnamese).
 
 <p align="center">
-  <img src="public/architecture.png" alt="Transformer Architecture" width="100%">
+  <img src="public/architecture.png" alt="Transformer Architecture" width="70%">
 </p>
 
 ## Repository Structure
