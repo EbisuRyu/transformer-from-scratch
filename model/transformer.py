@@ -19,14 +19,14 @@ class Transformer(nn.Module):
             vocab_size=config.src_vocab_size,
             max_seq_len=config.max_seq_len,
             dropout=config.dropout,
-            positional_encoding_mode="sinusoidal"
+            positional_encoding_mode=config.positional_encoding_mode
         )
         self.tgt_embedding = EmbeddingLayer(
             d_model=config.d_model,
             vocab_size=config.tgt_vocab_size,
             max_seq_len=config.max_seq_len,
             dropout=config.dropout,
-            positional_encoding_mode="sinusoidal"
+            positional_encoding_mode=config.positional_encoding_mode
         )
         
         self.encoder = Encoder(
