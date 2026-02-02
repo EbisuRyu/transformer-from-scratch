@@ -57,13 +57,6 @@ def prepare_dataloader(
     num_workers: int = 0
 ) -> DataLoader:
     
-    # dataset = load_dataset(
-    #     "mt_eng_vietnamese",
-    #     "iwslt2015-en-vi",
-    #     split=split,
-    #     trust_remote_code=True
-    # )
-    
     dataset = load_iwslt2015_en_vi(
         split=split,
         local_dir="./data/iwslt2015_en_vi"
