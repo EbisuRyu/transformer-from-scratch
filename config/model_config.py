@@ -11,6 +11,7 @@ class ModelConfig:
     num_layers: int = 6
     num_heads: int = 8
     d_ff: int = 2048
+    positional_encoding_mode: str = "sinusoidal"
 
     max_seq_len: int = 256
     dropout: float = 0.1

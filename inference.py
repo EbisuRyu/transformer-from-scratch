@@ -42,7 +42,12 @@ def parse_args():
         type=str,
         default="cpu",
     )
-
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="./weights/best.pt"
+    )
+    
     return parser.parse_args()
 
 
@@ -57,6 +62,17 @@ def main():
     logger.info("Building Transformer model...")
     train_config, model_config = load_config()
     model = Transformer(config=model_config).to(device)
+    
+    logger.info(f"Using checkpoint: {args.checkpoint}")
+    checkpoint = torch.load(
+        args.checkpoint,
+        map_location=device,
+    )
+    model.load_state_dict(
+        checkpoint["model_state"],
+        strict=True,
+    )
+    
 
     logger.info(f"Running translation on device: {device}")
 
