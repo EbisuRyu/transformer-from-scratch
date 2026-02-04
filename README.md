@@ -219,16 +219,71 @@ Evaluation metrics:
 - BERTScore
 
 ## Experiments
+This section provides an overview of the experimental setup, training behavior, and evaluation results of the model on the translation task, highlighting both optimization dynamics during training and performance on the test set.
 
-This section is for documenting your training runs. Add plots, notes, and comparisons between experiments here. It makes your results easy to review and share.
+### Training Curves
 
-Use this section to showcase training progress and compare experiments.
+The figure below shows the **training** and **validation loss** over **40 epochs**.
 
 <p align="center">
-  <img src="public/loss_plot.png" alt="Training Loss Curve" width="70%">
+  <img src="public/loss_curve.png" alt="Training and Validation Loss Curve" width="70%">
 </p>
 
-If you generate multiple plots, you can swap the file name or add additional images.
+- The model converges quickly during early epochs.
+- After around **epoch 20**, validation loss plateaus and slightly increases,
+  indicating the onset of **overfitting**.
+
+#### Experimental Setup
+
+<details>
+<summary><strong>Training Configuration</strong></summary>
+
+- Batch size: 32  
+- Epochs: 30  
+- Optimizer: AdamW (lr = 1.0, weight decay = 1e-4)  
+- Warmup steps: 4,000  
+- Label smoothing: 0.1  
+- Gradient clipping: 1.0  
+- Device: CUDA  
+- Seed: 42  
+
+</details>
+
+<details>
+<summary><strong>Model Configuration</strong></summary>
+
+- Architecture: Transformer (6 layers, 8 heads)  
+- Model dimension: 512  
+- Feed-forward dimension: 2048  
+- Max sequence length: 40  
+- Dropout: 0.1  
+- Activation: ReLU  
+- Vocabulary size: 16k (src) / 12k (tgt)  
+
+</details>
+
+### Test Evaluation
+
+We evaluate the trained model on the **held-out test set** using a combination of **lexical** and **semantic** metrics to provide a comprehensive assessment of translation quality.
+
+
+#### Quantitative Results
+
+| Metric                    | Description                                          |  Score |
+| ------------------------- | ---------------------------------------------------- | -----: |
+| **BLEU**                  | N-gram overlap metric for translation quality        | 0.0255 |
+| **chrF++**                | Character-level F-score with word boundary awareness | 7.7209 |
+| **BERTScore (Precision)** | Semantic precision based on contextual embeddings    | 0.8502 |
+| **BERTScore (Recall)**    | Semantic recall based on contextual embeddings       | 0.8242 |
+| **BERTScore (F1)**        | Harmonic mean of BERTScore precision and recall      | 0.8368 |
+
+#### Results Interpretation
+
+Interpretation of the evaluation metrics reveals complementary insights into the model’s translation quality across lexical and semantic dimensions:
+
+* The **BLEU** and **chrF++** scores are relatively low, highlighting the difficulty of achieving exact n-gram matches in **English → Vietnamese** translation.
+* In contrast, **BERTScore** reports significantly higher values, indicating strong **semantic alignment** between model outputs and reference translations.
+* This suggests that while the model may differ in surface wording, it preserves the **underlying meaning** of the source sentences.
 
 ## License
 
