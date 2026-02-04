@@ -85,8 +85,8 @@ def main():
     logger.info(f"Using device: {args.device}")
 
     logger.info("Loading tokenizers...")
-    src_tokenizer = Tokenizer.from_file("./tokenizer/src_tokenizer.json")
-    tgt_tokenizer = Tokenizer.from_file("./tokenizer/tgt_tokenizer.json")
+    src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
+    tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
 
     train_config, model_config = load_config()
     model = Transformer(config=model_config).to(args.device)
@@ -103,10 +103,19 @@ def main():
     model.eval()
 
     logger.info(f"Loading source file: {args.src_file}")
-    sources = read_lines(args.src_file)[:2]
+    sources = read_lines(args.src_file)
 
     logger.info(f"Loading reference file: {args.ref_file}")
-    references = read_lines(args.ref_file)[:2]
+    references = read_lines(args.ref_file)
+    
+    pairs = [
+        (s, r)
+        for s, r in zip(sources, references)
+        if len(src_tokenizer.encode(s)) <= args.max_seq_len
+        and len(tgt_tokenizer.encode(r)) <= args.max_seq_len
+    ]
+
+    sources, references = map(list, zip(*pairs))
 
     assert len(sources) == len(references), "src/ref line count mismatch"
 
