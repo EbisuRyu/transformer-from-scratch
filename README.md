@@ -5,18 +5,27 @@
 [![Hugging Face](https://img.shields.io/badge/HuggingFace-Tokenizers-yellow?logo=huggingface)](https://huggingface.co/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A PyTorch implementation of the Transformer architecture from the paper ["Attention Is All You Need"](https://arxiv.org/abs/1706.03762) for Neural Machine Translation (English → Vietnamese).
+A clean PyTorch implementation of the Transformer architecture from the paper ["Attention Is All You Need"](https://arxiv.org/abs/1706.03762) for Neural Machine Translation (English → Vietnamese).
 
 <p align="center">
   <img src="public/architecture.png" alt="Transformer Architecture" width="70%">
 </p>
 
+## Highlights
+
+This section summarizes the key ideas and strengths of the project. It is a quick snapshot of what the repository provides and why it is useful. Use it to decide if the project fits your goals.
+
+- Modular codebase with clear separation between model, training, and utilities.
+- YAML configuration for fast experiment iteration.
+- WordLevel tokenizers (English and Vietnamese) built with Hugging Face Tokenizers.
+- Ready-to-run scripts for training, inference, and evaluation.
+
 ## Repository Structure
 
-The codebase is organized into modular components for easy understanding and extensibility. Core model architecture lives in `model/`, while training utilities are separated in `training/`. Configuration files use YAML format for easy customization.
+This section explains how the repository is organized. It helps you locate code, configs, data, and scripts quickly. Skim this first if you are new to the project.
 
 ```
-transformer-from-scratch-remake/
+transformer-from-scratch/
 ├── config/              # Model & training configurations (YAML)
 ├── data/                # IWSLT2015 EN-VI dataset
 ├── model/               # Transformer architecture (encoder, decoder, layers)
@@ -31,7 +40,7 @@ transformer-from-scratch-remake/
 
 ## Getting Started
 
-Follow these steps to set up the development environment. A virtual environment is recommended to avoid dependency conflicts. GPU support requires CUDA-capable hardware and appropriate PyTorch installation.
+This section walks you through preparing your environment. It covers dependencies, setup steps, and any required downloads. Follow it to get a clean local run.
 
 ### Prerequisites
 
@@ -40,14 +49,14 @@ Follow these steps to set up the development environment. A virtual environment 
 
 ### Installation
 
-Clone the repository
+Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/transformer-from-scratch-remake.git
-cd transformer-from-scratch-remake
+git clone https://github.com/your-username/transformer-from-scratch.git
+cd transformer-from-scratch
 ```
 
-Create and activate a virtual environment
+Create and activate a virtual environment:
 
 ```bash
 python -m venv venv
@@ -59,29 +68,29 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-Install dependencies
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Download NLTK data (required for evaluation)
+Download NLTK data (required for evaluation):
 
 ```python
 import nltk
-nltk.download('punkt')
-nltk.download('punkt_tab')
+nltk.download("punkt")
+nltk.download("punkt_tab")
 ```
 
 ## Usage
 
-This section covers everything from configuration to deployment. You'll learn how to customize model hyperparameters, build tokenizers, train the model, and run inference. Evaluation metrics include BLEU, chrF++, and BERTScore.
+This section shows how to use the project end to end. You will learn how to configure experiments, train the model, run inference, and evaluate results. Use it as your main workflow guide.
 
 ### Configuration
 
 Model and training configurations are defined in YAML files:
 
-**Model Configuration** (`config/model.yaml`):
+Model configuration (`config/model.yaml`):
 
 ```yaml
 src_vocab_size: 16000
@@ -95,7 +104,7 @@ dropout: 0.1
 activation: gelu
 ```
 
-**Training Configuration** (`config/train.yaml`):
+Training configuration (`config/train.yaml`):
 
 ```yaml
 batch_size: 32
@@ -110,9 +119,9 @@ gradient_clip_norm: 1.0
 
 ### Vocabulary
 
-The project uses **WordLevel tokenizers** built with Hugging Face Tokenizers library.
+The project uses WordLevel tokenizers built with Hugging Face Tokenizers.
 
-Special Tokens:
+Special tokens:
 
 | Token | Description |
 |-------|-------------|
@@ -134,7 +143,7 @@ Output:
 | `tokenizer/en_tokenizer.json` | English | 16,000 |
 | `tokenizer/vi_tokenizer.json` | Vietnamese | 12,000 |
 
-> **Note:** Pre-built tokenizers are already included in the repository. You only need to rebuild if you want to use a different vocabulary size or dataset.
+Note: Pre-built tokenizers are already included in the repository. Rebuild only if you want to change the vocabulary size or dataset.
 
 ### Training
 
@@ -144,6 +153,7 @@ Train the Transformer model:
 python train.py --device cuda --batch-size 32 --epochs 30
 ```
 
+Arguments:
 
 | Argument | Description | Default |
 |----------|-------------|---------|
@@ -164,10 +174,10 @@ Translate a sentence using the trained model:
 
 ```bash
 python inference.py \
-    --sentence "Hello, how are you?" \
-    --checkpoint weights/best.pt \
-    --strategy greedy \
-    --device cpu
+  --sentence "Hello, how are you?" \
+  --checkpoint weights/best.pt \
+  --strategy greedy \
+  --device cpu
 ```
 
 | Argument | Description | Default |
@@ -185,11 +195,11 @@ Evaluate the model on the test set:
 
 ```bash
 python evaluate.py \
-    --checkpoint weights/best.pt \
-    --src-file data/iwslt2015_en_vi/test.en \
-    --ref-file data/iwslt2015_en_vi/test.vi \
-    --strategy greedy \
-    --device cuda
+  --checkpoint weights/best.pt \
+  --src-file data/iwslt2015_en_vi/test.en \
+  --ref-file data/iwslt2015_en_vi/test.vi \
+  --strategy greedy \
+  --device cuda
 ```
 
 | Argument | Description | Default |
@@ -202,18 +212,31 @@ python evaluate.py \
 | `--bert-model` | BERTScore model | `xlm-roberta-base` |
 | `--device` | Evaluation device | `cpu` |
 
-**Evaluation Metrics:**
-- **BLEU** - Bilingual Evaluation Understudy
-- **chrF++** - Character n-gram F-score
-- **BERTScore** - Semantic similarity using BERT embeddings
+Evaluation metrics:
+
+- BLEU
+- chrF++
+- BERTScore
+
+## Experiments
+
+This section is for documenting your training runs. Add plots, notes, and comparisons between experiments here. It makes your results easy to review and share.
+
+Use this section to showcase training progress and compare experiments.
+
+<p align="center">
+  <img src="public/loss_plot.png" alt="Training Loss Curve" width="70%">
+</p>
+
+If you generate multiple plots, you can swap the file name or add additional images.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See `LICENSE`.
 
 ## References
 
-Key papers and resources that inspired this implementation. The original Transformer paper introduced the self-attention mechanism. The Annotated Transformer provides an excellent line-by-line explanation of the architecture.
+This section lists the key papers and datasets behind this implementation. It gives proper credit and provides useful background reading. Check it if you want deeper context.
 
 - [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
 - [The Annotated Transformer](https://nlp.seas.harvard.edu/2018/04/03/attention.html)
