@@ -131,7 +131,7 @@ class Trainer:
         start_epoch: int = 1,
         save_every: int = 3
     ):
-        for epoch in range(start_epoch, self.config.epochs + 1):
+        for epoch in range(start_epoch, start_epoch + self.config.epochs + 1):
             train_loss = self.train_epoch(train_loader, epoch)
             val_loss = self.eval_epoch(val_loader, epoch)
 
@@ -156,14 +156,12 @@ class Trainer:
             }
             self.history.append(row)
 
-            df = pd.DataFrame(self.history)
-
             clear_output(wait=True)
             display(
-                df.style.format({
+                pd.DataFrame(self.history).style.format({
                     "train_loss": "{:.4f}",
                     "val_loss": "{:.4f}"
                 })
             )
-
-        return df
+        
+        return pd.DataFrame(self.history)
