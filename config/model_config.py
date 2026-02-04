@@ -15,6 +15,6 @@ class ModelConfig:
 
     max_seq_len: int = 256
     dropout: float = 0.1
-    activation: str = "gelu"
+    activation: str = "relu"
 
     pad_id: int = 0
