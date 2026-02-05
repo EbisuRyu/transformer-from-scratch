@@ -52,7 +52,7 @@ This section walks you through preparing your environment. It covers dependencie
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/transformer-from-scratch.git
+git clone https://github.com/EbisuRyu/transformer-from-scratch.git
 cd transformer-from-scratch
 ```
 
