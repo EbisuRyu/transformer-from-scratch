@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from model.transformer import Transformer
 from training.evaluator import TranslationEvaluator
-from config import load_config
+from config import load_config_from_yaml
 from utils.logging import get_logger
 from utils.translate import translate
 
@@ -17,23 +17,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate MT model")
 
     parser.add_argument(
-        "--src-file",
-        type=str,
-        default="./data/iwslt2015_en_vi/test.en",
-        help="Path to source sentences (English)",
-    )
-
-    parser.add_argument(
-        "--ref-file",
-        type=str,
-        default="./data/iwslt2015_en_vi/test.vi",
-        help="Path to reference translations (Vietnamese)",
-    )
-
-    parser.add_argument(
         "--checkpoint",
         type=str,
-        required=True,
         default=None,
         help="Path to trained model weights",
     )
@@ -41,34 +26,26 @@ def parse_args():
     parser.add_argument(
         "--device",
         type=str,
-        default="cpu",
+        default=None,
         help="Device for model & BERTScore",
-    )
-
-    parser.add_argument(
-        "--bert-model",
-        type=str,
-        default="xlm-roberta-base",
-        help="BERTScore model name",
     )
 
     parser.add_argument(
         "--max-seq-len",
         type=int,
-        default=128,
+        default=None,
     )
 
     parser.add_argument(
         "--strategy",
         type=str,
-        default="greedy",
-        choices=["greedy", "beam"],
+        default=None,
     )
 
     parser.add_argument(
         "--beam-size",
         type=int,
-        default=4,
+        default=None,
     )
 
     return parser.parse_args()
@@ -88,31 +65,59 @@ def main():
     src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
     tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
 
-    train_config, model_config = load_config()
+    model_config = load_config_from_yaml(
+        config_type="model",
+        file_path="./configs/model.yaml"
+    )
+    evaluate_config = load_config_from_yaml(
+        config_type="evaluate",
+        file_path="./configs/evaluate.yaml"
+    )
+    
     model = Transformer(config=model_config).to(args.device)
 
-    logger.info(f"Loading checkpoint from {args.checkpoint}")
+    if args.checkpoint is not None:
+        logger.info(f"Override checkpoint → {args.checkpoint}")
+        evaluate_config.checkpoint = args.checkpoint
+    
+    if args.device is not None:
+        logger.info(f"Override device → {args.device}")
+        evaluate_config.device = args.device
+    
+    if args.max_seq_len is not None:
+        logger.info(f"Override max_seq_len → {args.max_seq_len}")
+        evaluate_config.max_seq_len = args.max_seq_len
+    
+    if args.strategy is not None:
+        logger.info(f"Override strategy → {args.strategy}")
+        evaluate_config.strategy = args.strategy
+    
+    if args.beam_size is not None:
+        logger.info(f"Override beam_size → {args.beam_size}")
+        evaluate_config.beam_size = args.beam_size
+    
+    logger.info(f"Loading checkpoint from {evaluate_config.checkpoint}")
     checkpoint = torch.load(
-        args.checkpoint,
-        map_location=args.device,
+        evaluate_config.checkpoint,
+        map_location=evaluate_config.device,
     )
     model.load_state_dict(
         checkpoint["model_state"],
-        strict=True,
+        strict=False,
     )
     model.eval()
 
-    logger.info(f"Loading source file: {args.src_file}")
-    sources = read_lines(args.src_file)
+    logger.info(f"Loading source file: {evaluate_config.src_file}")
+    sources = read_lines(evaluate_config.src_file)
 
-    logger.info(f"Loading reference file: {args.ref_file}")
-    references = read_lines(args.ref_file)
+    logger.info(f"Loading reference file: {evaluate_config.ref_file}")
+    references = read_lines(evaluate_config.ref_file)
     
     pairs = [
         (s, r)
         for s, r in zip(sources, references)
-        if len(src_tokenizer.encode(s)) <= args.max_seq_len
-        and len(tgt_tokenizer.encode(r)) <= args.max_seq_len
+        if len(src_tokenizer.encode(s)) <= evaluate_config.max_seq_len
+        and len(tgt_tokenizer.encode(r)) <= evaluate_config.max_seq_len
     ]
 
     sources, references = map(list, zip(*pairs))
@@ -122,22 +127,22 @@ def main():
     logger.info("Translating with model...")
     predictions = []
 
-    for s in tqdm(sources, desc="Translating", ncols=90):
-        vi = translate(
+    for sentence in tqdm(sources, desc="Translating", ncols=90):
+        translation = translate(
             model=model,
-            src_sentence=s,
+            src_sentence=sentence,
             src_tokenizer=src_tokenizer,
             tgt_tokenizer=tgt_tokenizer,
-            max_seq_len=args.max_seq_len,
-            strategy=args.strategy,
-            beam_size=args.beam_size,
-            device=args.device,
+            max_seq_len=evaluate_config.max_seq_len,
+            strategy=evaluate_config.strategy,
+            beam_size=evaluate_config.beam_size,
+            device=evaluate_config.device,
         )
-        predictions.append(vi)
+        predictions.append(translation)
 
     evaluator = TranslationEvaluator(
-        bert_model=args.bert_model,
-        device=args.device,
+        bert_model=evaluate_config.bert_model,
+        device=evaluate_config.device,
     )
 
     logger.info("Computing metrics (BLEU, chrF++, BERTScore)...")

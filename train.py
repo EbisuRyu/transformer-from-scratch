@@ -11,7 +11,7 @@ from training.trainer import Trainer
 from training.scheduler import WarmupScheduler
 from training.dataloader import get_iwslt2015_en_vi_dataloaders
 from utils.logging import get_logger
-from config import load_config
+from config import load_config_from_yaml
 
 
 logger = get_logger(name="train")
@@ -60,7 +60,14 @@ def main():
     src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
     tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
 
-    train_config, model_config = load_config()
+    train_config = load_config_from_yaml(
+        config_type='train',
+        file_path='./configs/train.yaml'
+    )
+    model_config = load_config_from_yaml(
+        config_type='model',
+        file_path='./configs/model.yaml'
+    )
     train_config.device = args.device
     
     if args.batch_size is not None:
