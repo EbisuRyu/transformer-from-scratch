@@ -7,6 +7,7 @@ from tokenizers import Tokenizer
 
 import torch
 import torch.nn as nn
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
 from config import TrainConfig
@@ -23,10 +24,10 @@ class Trainer:
         src_tokenizer: Tokenizer,
         tgt_tokenizer: Tokenizer,
         criterion: nn.Module,
-        optimizer: torch.optim.Optimizer,
+        optimizer: Optimizer,
         checkpointer: Checkpointer,
         scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-    ):
+    ) -> None:
         self.config = config
         self.model = model.to(config.device)
         self.src_tokenizer = src_tokenizer
@@ -96,7 +97,6 @@ class Trainer:
         avg_loss = total_loss / len(train_loader)
         return avg_loss
 
-
     @torch.no_grad()
     def eval_epoch(self, val_loader: DataLoader, epoch: int) -> float:
         self.model.eval()
@@ -130,8 +130,8 @@ class Trainer:
         val_loader: DataLoader,
         start_epoch: int = 1,
         save_every: int = 3
-    ):
-        for epoch in range(start_epoch, start_epoch + self.config.epochs + 1):
+    ) -> pd.DataFrame:
+        for epoch in range(start_epoch, start_epoch + self.config.epochs):
             train_loss = self.train_epoch(train_loader, epoch)
             val_loss = self.eval_epoch(val_loader, epoch)
 
