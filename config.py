@@ -1,4 +1,4 @@
-from typing import Dict, Type, Any
+from typing import Dict, Type, Any, Tuple, Optional
 from dataclasses import dataclass
 import yaml
 
@@ -20,7 +20,35 @@ class ModelConfig:
     activation: str
 
     pad_id: int
+    
 
+@dataclass
+class TrainConfig:
+
+    batch_size: int
+    epochs: int
+    grad_accumulation_steps: int
+    gradient_clip_norm: float
+    label_smoothing: float
+    
+    optimizer: str
+    learning_rate: float
+    betas: Tuple[float, float]
+    eps: float
+    weight_decay: float
+    
+    warmup_steps: Optional[int]
+    
+    monitor_metric: str
+    monitor_mode: str
+    
+    checkpoint_dir: str
+    save_best_only: bool
+    
+    device: str
+    num_workers: int
+    seed: int
+    
 
 @dataclass
 class EvaluateConfig:
@@ -35,31 +63,6 @@ class EvaluateConfig:
     max_seq_len: str
     strategy: str
     beam_size: int
-    
-
-@dataclass
-class TrainConfig:
-
-    batch_size: int
-    epochs: int
-    grad_accumulation_steps: int
-    gradient_clip_norm: float
-    label_smoothing: float
-    
-    optimizer: str
-    learning_rate: float
-    weight_decay: float
-    warmup_steps: int
-    
-    monitor_metric: str
-    monitor_mode: str
-    
-    checkpoint_dir: str
-    save_best_only: bool
-    
-    device: str
-    num_workers: int
-    seed: int
 
 
 def load_config_from_yaml(config_type: str, file_path: str) -> Any:
