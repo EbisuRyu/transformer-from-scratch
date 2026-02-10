@@ -1,7 +1,8 @@
 import argparse
+
 import torch
-from tokenizers import Tokenizer
 from tqdm import tqdm
+from tokenizers import Tokenizer
 
 from model.transformer import Transformer
 from training.evaluator import TranslationEvaluator
@@ -58,24 +59,17 @@ def read_lines(path):
 
 def main():
     args = parse_args()
-
-    logger.info(f"Using device: {args.device}")
-
-    logger.info("Loading tokenizers...")
-    src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
-    tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
-
-    model_config = load_config_from_yaml(
-        config_type="model",
-        file_path="./configs/model.yaml"
+    
+    logger.info("Loaded training & model config")
+    train_config = load_config_from_yaml(
+        config_type='train',
+        file_path='./configs/train.yaml'
     )
-    evaluate_config = load_config_from_yaml(
-        config_type="evaluate",
-        file_path="./configs/evaluate.yaml"
+    model_config = load_config_from_yaml(
+        config_type='model',
+        file_path='./configs/model.yaml'
     )
     
-    model = Transformer(config=model_config).to(args.device)
-
     if args.checkpoint is not None:
         logger.info(f"Override checkpoint → {args.checkpoint}")
         evaluate_config.checkpoint = args.checkpoint
@@ -95,6 +89,23 @@ def main():
     if args.beam_size is not None:
         logger.info(f"Override beam_size → {args.beam_size}")
         evaluate_config.beam_size = args.beam_size
+
+    logger.info(f"Using device: {train_config.device}")
+    
+    logger.info("Loading tokenizers...")
+    src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
+    tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
+
+    model_config = load_config_from_yaml(
+        config_type="model",
+        file_path="./configs/model.yaml"
+    )
+    evaluate_config = load_config_from_yaml(
+        config_type="evaluate",
+        file_path="./configs/evaluate.yaml"
+    )
+    
+    model = Transformer(config=model_config).to(evaluate_config.device)
     
     logger.info(f"Loading checkpoint from {evaluate_config.checkpoint}")
     checkpoint = torch.load(
