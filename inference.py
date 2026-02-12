@@ -3,7 +3,7 @@ import argparse
 import torch
 from tokenizers import Tokenizer
 
-from config import load_config
+from config import load_config_from_yaml
 from model.transformer import Transformer
 from utils.logging import get_logger
 from utils.translate import translate
@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument(
         "--sentence",
         type=str,
-        default="hello",
+        default="you can see",
     )
     parser.add_argument(
         "--device",
@@ -60,7 +60,10 @@ def main():
     tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
 
     logger.info("Building Transformer model...")
-    train_config, model_config = load_config()
+    model_config = load_config_from_yaml(
+        config_type='model',
+        file_path='./configs/model.yaml'
+    )
     model = Transformer(config=model_config).to(device)
     
     logger.info(f"Using checkpoint: {args.checkpoint}")
@@ -73,7 +76,6 @@ def main():
         strict=True,
     )
     
-
     logger.info(f"Running translation on device: {device}")
 
     logger.info(f"Translation strategy: {args.strategy}")

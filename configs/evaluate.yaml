@@ -1,0 +1,10 @@
+src_file: ./data/iwslt2015_en_vi/test.en
+ref_file: ./data/iwslt2015_en_vi/test.vi
+
+checkpoint: ./weights/best.pt
+device: cpu
+
+bert_model: xlm-roberta-base
+max_seq_len: 40
+strategy: beam
+beam_size: 4

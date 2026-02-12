@@ -11,7 +11,7 @@ from training.trainer import Trainer
 from training.scheduler import WarmupScheduler
 from training.dataloader import get_iwslt2015_en_vi_dataloaders
 from utils.logging import get_logger
-from config import load_config
+from config import load_config_from_yaml
 
 
 logger = get_logger(name="train")
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda" if torch.cuda.is_available() else "cpu",
+        default=None,
         help="Training device",
     )
 
@@ -52,16 +52,21 @@ def parse_args():
 
 
 def main():
-    args = parse_args()
+    args = parse_args()    
 
-    logger.info(f"Using device: {args.device}")
-
-    logger.info("Loading tokenizers...")
-    src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
-    tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
-
-    train_config, model_config = load_config()
-    train_config.device = args.device
+    logger.info("Loaded training & model config")
+    train_config = load_config_from_yaml(
+        config_type='train',
+        file_path='./configs/train.yaml'
+    )
+    model_config = load_config_from_yaml(
+        config_type='model',
+        file_path='./configs/model.yaml'
+    )
+    
+    if args.device is not None:
+        logger.info(f"Override device → {args.device}")
+        train_config.device = args.device
     
     if args.batch_size is not None:
         logger.info(f"Override batch size → {args.batch_size}")
@@ -70,8 +75,12 @@ def main():
     if args.epochs is not None:
         logger.info(f"Override epochs → {args.epochs}")
         train_config.num_epochs = args.epochs
-        
-    logger.info("Loaded training & model config")
+    
+    logger.info(f"Using device: {train_config.device}")
+    
+    logger.info("Loading tokenizers...")
+    src_tokenizer = Tokenizer.from_file("./tokenizer/en_tokenizer.json")
+    tgt_tokenizer = Tokenizer.from_file("./tokenizer/vi_tokenizer.json")
 
     logger.info("Building dataloaders...")
     dataloaders = get_iwslt2015_en_vi_dataloaders(
@@ -83,27 +92,39 @@ def main():
     )
 
     logger.info("Building Transformer model...")
-    model = Transformer(config=model_config).to(args.device)
+    model = Transformer(config=model_config).to(train_config.device)
 
     criterion = nn.CrossEntropyLoss(
         ignore_index=src_tokenizer.token_to_id("[PAD]"),
         label_smoothing=0.1,
         reduction="mean",
     )
+    
+    if train_config.optimizer == "adam":
+        optimizer = optim.Adam(
+            model.parameters(),
+            lr=train_config.learning_rate,
+            betas=train_config.betas,
+            eps=train_config.eps,
+            weight_decay=train_config.weight_decay,
+        )
+    elif train_config.optimizer == "adamw":
+        optimizer = optim.AdamW(
+            model.parameters(),
+            lr=train_config.learning_rate,
+            betas=train_config.betas,
+            eps=train_config.eps,
+            weight_decay=train_config.weight_decay,
+        )
 
-    optimizer = optim.Adam(
-        model.parameters(),
-        lr=train_config.learning_rate,
-        betas=(0.9, 0.98),
-        eps=1e-9,
-        weight_decay=train_config.weight_decay,
-    )
-
-    scheduler = WarmupScheduler(
-        optimizer=optimizer,
-        d_model=model_config.d_model,
-        warmup_steps=train_config.warmup_steps,
-    )
+    if train_config.warmup_steps:
+        scheduler = WarmupScheduler(
+            optimizer=optimizer,
+            d_model=model_config.d_model,
+            warmup_steps=train_config.warmup_steps,
+        )
+    else:
+        scheduler = None
 
     checkpointer = Checkpointer(
         checkpoint_dir=train_config.checkpoint_dir,
@@ -122,7 +143,7 @@ def main():
             model=model,
             optimizer=optimizer,
             scheduler=scheduler,
-            device=args.device,
+            device=train_config.device,
         )
 
         start_epoch = last_epoch + 1

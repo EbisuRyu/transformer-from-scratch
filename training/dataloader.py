@@ -1,28 +1,34 @@
-from typing import List, Dict
+from typing import List, Dict, List
+
 import html
 import random
 import torch
 from tokenizers import Tokenizer
-from datasets import load_dataset
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader, Sampler
 
-from utils.dataset import load_iwslt2015_en_vi
+from data.iwslt2015_en_vi import load_iwslt2015_en_vi_dataset
 
 
 class TranslationDataset(Dataset):
     
-    def __init__(self, src_texts: List[str], tgt_texts: List[str], src_tokenizer: Tokenizer, tgt_tokenizer: Tokenizer):
+    def __init__(
+        self, 
+        src_texts: List[str], 
+        tgt_texts: List[str], 
+        src_tokenizer: Tokenizer, 
+        tgt_tokenizer: Tokenizer
+    ) -> None:
         assert len(src_texts) == len(tgt_texts)
         self.src_texts = src_texts
         self.tgt_texts = tgt_texts
         self.src_tokenizer = src_tokenizer
         self.tgt_tokenizer = tgt_tokenizer
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.src_texts)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Dict[str, torch.Tensor]:
         src_ids = self.src_tokenizer.encode(self.src_texts[idx]).ids
         tgt_ids = self.tgt_tokenizer.encode(self.tgt_texts[idx]).ids
         return {
@@ -33,7 +39,7 @@ class TranslationDataset(Dataset):
 
 class ShuffledBatchSampler(Sampler):
     
-    def __init__(self, dataset: Dataset, batch_size: int):
+    def __init__(self, dataset: Dataset, batch_size: int) -> None:
         self.dataset_len = len(dataset)
         self.batch_size = batch_size
         self.indices = list(range(self.dataset_len))
@@ -43,12 +49,13 @@ class ShuffledBatchSampler(Sampler):
         for i in range(0, self.dataset_len, self.batch_size):
             yield self.indices[i:i + self.batch_size]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return (self.dataset_len + self.batch_size - 1) // self.batch_size
 
 
 def prepare_dataloader(
     split: str,
+    dataset: Dataset,
     src_tokenizer: Tokenizer,
     tgt_tokenizer: Tokenizer,
     batch_size: int,
@@ -56,11 +63,6 @@ def prepare_dataloader(
     seed: int = 24,
     num_workers: int = 0
 ) -> DataLoader:
-    
-    dataset = load_iwslt2015_en_vi(
-        split=split,
-        local_dir="./data/iwslt2015_en_vi"
-    )
     
     if split == "train":
         dataset = dataset.shuffle(seed=seed)
@@ -106,15 +108,25 @@ def get_iwslt2015_en_vi_dataloaders(
     num_workers: int = 0,
     splits: List[str] = ["train", "validation", "test"]
 ) -> Dict[str, DataLoader]:
-    
-    return {
-        split: prepare_dataloader(
-            split=split, 
-            src_tokenizer=src_tokenizer, 
-            tgt_tokenizer=tgt_tokenizer, 
-            batch_size=batch_size, 
+
+    split_to_dataloader: Dict[str, DataLoader] = {}
+
+    for split_name in splits:
+        split_dataset = load_iwslt2015_en_vi_dataset(
+            split=split_name,
+            local_dir="./data/iwslt2015_en_vi"
+        )
+
+        split_dataloader = prepare_dataloader(
+            split=split_name,
+            dataset=split_dataset,
+            src_tokenizer=src_tokenizer,
+            tgt_tokenizer=tgt_tokenizer,
+            batch_size=batch_size,
             max_seq_len=max_seq_len,
             num_workers=num_workers
-        ) 
-        for split in splits
-    }
+        )
+
+        split_to_dataloader[split_name] = split_dataloader
+
+    return split_to_dataloader

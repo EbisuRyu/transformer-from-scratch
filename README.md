@@ -8,7 +8,7 @@
 A clean PyTorch implementation of the Transformer architecture from the paper ["Attention Is All You Need"](https://arxiv.org/abs/1706.03762) for Neural Machine Translation (English → Vietnamese).
 
 <p align="center">
-  <img src="public/architecture.png" alt="Transformer Architecture" width="70%">
+  <img src="public/architecture.png" alt="Transformer Architecture" width="80%">
 </p>
 
 ## Highlights
@@ -26,16 +26,29 @@ This section explains how the repository is organized. It helps you locate code,
 
 ```
 transformer-from-scratch/
-├── config/              # Model & training configurations (YAML)
+├── configs/             # Model & training configurations (YAML)
 ├── data/                # IWSLT2015 EN-VI dataset
 ├── model/               # Transformer architecture (encoder, decoder, layers)
 ├── tokenizer/           # WordLevel tokenizers (EN & VI)
 ├── training/            # Trainer, evaluator, scheduler, checkpointer
 ├── utils/               # Masks, translation, logging utilities
+├── scripts/             # Helper scripts
+├── notebooks/           # Experiments and analysis notebooks
+├── public/              # Figures and assets for README
+│
+├── logs/                # Training/evaluation logs
 ├── weights/             # Saved checkpoints
+│
+├── config.py            # Config dataclasses and YAML loader
 ├── train.py             # Training entrypoint
+├── evaluate.py          # Model evaluation
 ├── inference.py         # Translation inference
-└── evaluate.py          # Model evaluation
+│
+├── requirements.txt
+├── README.md
+├── LICENSE
+├── .gitignore
+└── .gitattributes
 ```
 
 ## Getting Started
@@ -52,7 +65,7 @@ This section walks you through preparing your environment. It covers dependencie
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/transformer-from-scratch.git
+git clone https://github.com/EbisuRyu/transformer-from-scratch.git
 cd transformer-from-scratch
 ```
 

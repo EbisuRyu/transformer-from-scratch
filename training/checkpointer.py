@@ -12,9 +12,9 @@ class Checkpointer:
         self,
         checkpoint_dir: str,
         monitor: str = "val_loss",
-        mode: str = "min",  # "min" or "max"
+        mode: str = "min", 
         save_best_only: bool = True,
-    ):
+    ) -> None:
         assert mode in {"min", "max"}
 
         self.checkpoint_dir = Path(checkpoint_dir)
@@ -38,7 +38,7 @@ class Checkpointer:
         model: Transformer,
         optimizer: Optional[torch.optim.Optimizer] = None,
         scheduler: Optional[Any] = None,
-    ):
+    ) -> None:
         score = metrics.get(self.monitor)
         assert score is not None, f"Metric '{self.monitor}' not found in metrics"
 
@@ -69,7 +69,7 @@ class Checkpointer:
 
     def load(
         self,
-        name: str = "best",  # "best" or "last"
+        name: str = "best", 
         model: Optional[Transformer] = None,
         optimizer: Optional[torch.optim.Optimizer] = None,
         scheduler: Optional[Any] = None,
@@ -114,7 +114,7 @@ class Checkpointer:
     def _move_optimizer_to_device(
         optimizer: torch.optim.Optimizer,
         device: torch.device,
-    ):
+    ) -> None:
         for state in optimizer.state.values():
             for k, v in state.items():
                 if torch.is_tensor(v):
